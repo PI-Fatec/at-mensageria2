@@ -4,7 +4,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pedido } from './entities/pedido.entity';
-import { GetPedidosFilterDto } from './dto/get-pedidos-filter.dto';
+import { GetPedidosFilterDto, OrdenacaoDataPedido } from './dto/get-pedidos-filter.dto';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { Cliente } from './entities/cliente.entity';
 import { Produto } from './entities/produto.entity';
@@ -29,68 +29,27 @@ export class PedidoService {
       relations: ['cliente', 'itens', 'itens.produto'],
     });
 
-    if (pedidoExistente) {
-      return this.formatarPayload(pedidoExistente);
-    }
+    const cliente = await this.salvarOuAtualizarCliente(dto);
+    const pedido = pedidoExistente ?? this.pedidoRepository.create({ uuid: dto.uuid });
 
-    let cliente = await this.clienteRepository.findOne({
-      where: { id: dto.customer.id },
-    });
-
-    if (!cliente) {
-      cliente = this.clienteRepository.create({
-        id: dto.customer.id,
-        nome: dto.customer.name ?? `Cliente ${dto.customer.id}`,
-        email: dto.customer.email ?? `cliente${dto.customer.id}@sem-email.local`,
-        document: dto.customer.document ?? null,
-      });
-      await this.clienteRepository.save(cliente);
-    } else {
-      cliente.nome = dto.customer.name ?? cliente.nome;
-      cliente.email = dto.customer.email ?? cliente.email;
-      cliente.document = dto.customer.document ?? cliente.document;
-      await this.clienteRepository.save(cliente);
-    }
-
-    const pedido = this.pedidoRepository.create({
-      uuid: dto.uuid,
-      status: dto.status,
-      channel: dto.channel ?? null,
-      data_criacao_marketplace: new Date(dto.created_at),
-      cliente,
-      seller: dto.seller ?? null,
-      shipment: dto.shipment ?? null,
-      payment: dto.payment ?? null,
-      metadata: dto.metadata ?? null,
-    });
+    pedido.status = dto.status;
+    pedido.channel = dto.channel ?? null;
+    pedido.data_criacao_marketplace = new Date(dto.created_at);
+    pedido.data_indexacao = new Date();
+    pedido.cliente = cliente;
+    pedido.seller = dto.seller ?? null;
+    pedido.shipment = dto.shipment ?? null;
+    pedido.payment = dto.payment ?? null;
+    pedido.metadata = dto.metadata ?? null;
 
     const pedidoSalvo = await this.pedidoRepository.save(pedido);
 
+    if (pedidoExistente?.itens?.length) {
+      await this.itemPedidoRepository.remove(pedidoExistente.itens);
+    }
+
     for (const itemDto of dto.items) {
-      let produto = await this.produtoRepository.findOne({
-        where: { id: itemDto.product_id },
-      });
-
-      if (!produto) {
-        produto = this.produtoRepository.create({
-          id: itemDto.product_id,
-          nome: itemDto.product_name ?? `Produto ${itemDto.product_id}`,
-          descricao: null,
-          categoria_id: itemDto.category?.id ?? null,
-          categoria_nome: itemDto.category?.name ?? null,
-          subcategoria_id: itemDto.category?.sub_category?.id ?? null,
-          subcategoria_nome: itemDto.category?.sub_category?.name ?? null,
-        });
-      } else {
-        produto.nome = itemDto.product_name ?? produto.nome;
-        produto.categoria_id = itemDto.category?.id ?? produto.categoria_id;
-        produto.categoria_nome = itemDto.category?.name ?? produto.categoria_nome;
-        produto.subcategoria_id = itemDto.category?.sub_category?.id ?? produto.subcategoria_id;
-        produto.subcategoria_nome = itemDto.category?.sub_category?.name ?? produto.subcategoria_nome;
-      }
-
-      await this.produtoRepository.save(produto);
-
+      const produto = await this.salvarOuAtualizarProduto(itemDto);
       const item = this.itemPedidoRepository.create({
         pedido: pedidoSalvo,
         produto,
@@ -110,13 +69,21 @@ export class PedidoService {
   }
 
   async findAll(filtros: GetPedidosFilterDto) {
-    const { page = 1, limit = 10, codigoCliente, produtoId, status } = filtros;
-    
+    const {
+      page = 1,
+      limit = 10,
+      codigoCliente,
+      produtoId,
+      status,
+      sort = OrdenacaoDataPedido.DESC,
+    } = filtros;
+
     const query = this.pedidoRepository.createQueryBuilder('pedido')
       .leftJoinAndSelect('pedido.cliente', 'cliente')
       .leftJoinAndSelect('pedido.itens', 'itens')
       .leftJoinAndSelect('itens.produto', 'produto')
-      .orderBy('pedido.data_criacao_marketplace', 'DESC');
+      .orderBy('pedido.data_criacao_marketplace', sort.toUpperCase() as 'ASC' | 'DESC')
+      .distinct(true);
 
     if (codigoCliente) query.andWhere('cliente.id = :codigoCliente', { codigoCliente });
     if (status) query.andWhere('pedido.status = :status', { status });
@@ -133,6 +100,7 @@ export class PedidoService {
       meta: {
         total,
         page,
+        limit,
         last_page: Math.ceil(total / limit),
       },
     };
@@ -197,5 +165,52 @@ export class PedidoService {
       metadata: pedido.metadata,
       indexed_at: pedido.data_indexacao,
     };
+  }
+
+  private async salvarOuAtualizarCliente(dto: CreatePedidoDto) {
+    let cliente = await this.clienteRepository.findOne({
+      where: { id: dto.customer.id },
+    });
+
+    if (!cliente) {
+      cliente = this.clienteRepository.create({
+        id: dto.customer.id,
+        nome: dto.customer.name ?? `Cliente ${dto.customer.id}`,
+        email: dto.customer.email ?? `cliente${dto.customer.id}@sem-email.local`,
+        document: dto.customer.document ?? null,
+      });
+    } else {
+      cliente.nome = dto.customer.name ?? cliente.nome;
+      cliente.email = dto.customer.email ?? cliente.email;
+      cliente.document = dto.customer.document ?? cliente.document;
+    }
+
+    return this.clienteRepository.save(cliente);
+  }
+
+  private async salvarOuAtualizarProduto(itemDto: CreatePedidoDto['items'][number]) {
+    let produto = await this.produtoRepository.findOne({
+      where: { id: itemDto.product_id },
+    });
+
+    if (!produto) {
+      produto = this.produtoRepository.create({
+        id: itemDto.product_id,
+        nome: itemDto.product_name ?? `Produto ${itemDto.product_id}`,
+        descricao: null,
+        categoria_id: itemDto.category?.id ?? null,
+        categoria_nome: itemDto.category?.name ?? null,
+        subcategoria_id: itemDto.category?.sub_category?.id ?? null,
+        subcategoria_nome: itemDto.category?.sub_category?.name ?? null,
+      });
+    } else {
+      produto.nome = itemDto.product_name ?? produto.nome;
+      produto.categoria_id = itemDto.category?.id ?? produto.categoria_id;
+      produto.categoria_nome = itemDto.category?.name ?? produto.categoria_nome;
+      produto.subcategoria_id = itemDto.category?.sub_category?.id ?? produto.subcategoria_id;
+      produto.subcategoria_nome = itemDto.category?.sub_category?.name ?? produto.subcategoria_nome;
+    }
+
+    return this.produtoRepository.save(produto);
   }
 }

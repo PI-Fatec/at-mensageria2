@@ -1,27 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { PedidoService } from './pedido.service';
 import { GetPedidosFilterDto } from './dto/get-pedidos-filter.dto';
-import { CreatePedidoDto } from './dto/create-pedido.dto';
-import { PedidoConsumerService } from './pedido.consumer';
 
 @ApiTags('Orders')
 @Controller('orders')
 export class PedidoController {
-  constructor(
-    private readonly pedidoService: PedidoService,
-    private readonly pedidoConsumerService: PedidoConsumerService,
-  ) {}
-
-  @Post('ingest-manual')
-  @ApiOperation({ summary: 'Ingestao manual de pedido (sem Pub/Sub configurado)' })
-  @ApiResponse({ status: 201, description: 'Pedido ingerido e persistido com sucesso.' })
-  ingestManual(@Body() payload: CreatePedidoDto) {
-    return this.pedidoConsumerService.consumirManualmente(payload);
-  }
+  constructor(private readonly pedidoService: PedidoService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar pedidos com filtros, ordenação e paginação' })

@@ -10,8 +10,9 @@ Implementacao basica de ingestao e consulta de pedidos com NestJS + TypeORM + Po
 - produto
 - item_pedido
 - Registro de hora de indexacao do pedido na base (`indexed_at` no payload de resposta).
-- Consumidor basico manual (sem assinatura real de Pub/Sub), via rota:
-- `POST /orders/ingest-manual`
+- Consumidor de pedidos preparado para Google Pub/Sub:
+- assinatura opcional por variaveis de ambiente
+- `ack/nack` quando a assinatura estiver configurada
 - API de consulta:
 - `GET /orders` com paginacao, ordenacao por data e filtros
 - `GET /orders/{uuid}`
@@ -19,6 +20,7 @@ Implementacao basica de ingestao e consulta de pedidos com NestJS + TypeORM + Po
 - `codigoCliente`
 - `produtoId`
 - `status`
+- `sort` (`asc` ou `desc`)
 - `page`
 - `limit`
 - Regras de calculo:
@@ -27,8 +29,8 @@ Implementacao basica de ingestao e consulta de pedidos com NestJS + TypeORM + Po
 
 ## Pendencias intencionais (escopo combinado)
 
-- Nao foi implementada a configuracao real do Pub/Sub (subscription, auth, ack/nack).
-- Nao foi implementada suite de testes automatizados.
+- Falta apenas preencher as variaveis reais do Google Pub/Sub no ambiente para conectar a assinatura do projeto.
+- Nao ha testes de integracao com banco e Pub/Sub real.
 
 ## Executar localmente
 
@@ -40,6 +42,15 @@ docker compose up -d
 
 2. Criar arquivo `.env` a partir de `.env.example`.
 
+Se quiser deixar o Pub/Sub pronto para uso real, preencha tambem:
+
+```env
+GOOGLE_CLOUD_PROJECT=seu-projeto
+GOOGLE_APPLICATION_CREDENTIALS=/caminho/credenciais.json
+PUBSUB_SUBSCRIPTION_NAME=orders-subscription
+PUBSUB_EMULATOR_HOST=
+```
+
 3. Instalar dependencias:
 
 ```bash
@@ -49,73 +60,27 @@ npm install
 4. Rodar aplicacao:
 
 ```bash
-npm run start:dev
+npm run dev
+```
+
+5. Popular o banco com dados padrao:
+
+```bash
+npm run seed
 ```
 
 ## Demonstracao rapida
 
-1. Ingerir pedido manualmente:
+1. Popular o banco para demonstracao local:
 
-```http
-POST /orders/ingest-manual
-Content-Type: application/json
-
-{
- "uuid": "ORD-2025-0001",
- "created_at": "2025-10-01T10:15:00Z",
- "channel": "mobile_app",
- "status": "created",
- "customer": {
-  "id": 7788,
-  "name": "Maria Oliveira",
-  "email": "maria@email.com",
-  "document": "987.654.321-00"
- },
- "items": [
-  {
-   "product_id": 9001,
-   "product_name": "Smartphone X",
-   "unit_price": 2500.00,
-   "quantity": 2,
-   "category": {
-    "id": "ELEC",
-    "name": "Eletronicos",
-    "sub_category": {
-     "id": "PHONE",
-     "name": "Smartphones"
-    }
-   }
-  }
- ],
- "seller": {
-  "id": 55,
-  "name": "Tech Store",
-  "city": "Sao Paulo",
-  "state": "SP"
- },
- "shipment": {
-  "carrier": "Correios",
-  "service": "SEDEX",
-  "status": "shipped",
-  "tracking_code": "BR123456789"
- },
- "payment": {
-  "method": "pix",
-  "status": "approved",
-  "transaction_id": "pay_987654321"
- },
- "metadata": {
-  "source": "app",
-  "user_agent": "Mozilla/5.0",
-  "ip_address": "10.0.0.1"
- }
-}
+```bash
+npm run seed
 ```
 
 2. Consultar pedidos:
 
 ```http
-GET /orders?page=1&limit=10&codigoCliente=7788&status=created
+GET /orders?page=1&limit=10&codigoCliente=7788&status=created&sort=desc
 ```
 
 3. Consultar pedido por uuid:
@@ -126,7 +91,22 @@ GET /orders/ORD-2025-0001
 
 ## Entregaveis academicos
 
-- Demonstracao do projeto funcionando: feita pelos endpoints acima.
+- Demonstracao do projeto funcionando: feita pelos endpoints acima e pela assinatura Pub/Sub quando configurada.
 - DER do banco: arquivo em `docs/Diagram.png`.
 - Fontes no git: este repositorio.
 - Commit de todos os membros: checklist deve ser validado no historico do repositorio antes da entrega.
+
+## Checklist de entrega
+
+- [x] Persistencia relacional com tabelas `pedido`, `cliente`, `produto` e `item_pedido`
+- [x] Registro da hora de indexacao na base (`indexed_at`)
+- [x] API REST com `GET /orders` e `GET /orders/{uuid}`
+- [x] Paginacao em `GET /orders`
+- [x] Ordenacao por data
+- [x] Filtros por `codigoCliente`, `produtoId` e `status`
+- [x] Calculo dinamico do total do pedido
+- [x] Calculo dinamico do total de cada item
+- [x] Seed com dados padrao para demonstracao local
+- [x] DER disponivel em `docs/Diagram.png`
+- [ ] Configurar e demonstrar consumo real via Google Pub/Sub
+- [ ] Validar commits de todos os membros no historico do git

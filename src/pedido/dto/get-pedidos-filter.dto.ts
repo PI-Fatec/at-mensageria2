@@ -10,6 +10,11 @@ export enum StatusPedido {
   CANCELED = 'canceled',
 }
 
+export enum OrdenacaoDataPedido {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
 export class GetPedidosFilterDto {
   @ApiPropertyOptional({ description: 'Número da página para paginação', default: 1 })
   @IsOptional()
@@ -41,4 +46,9 @@ export class GetPedidosFilterDto {
   @IsOptional()
   @IsEnum(StatusPedido)
   status?: StatusPedido;
+
+  @ApiPropertyOptional({ description: 'Ordenação pela data de criação do pedido', enum: OrdenacaoDataPedido, default: OrdenacaoDataPedido.DESC })
+  @IsOptional()
+  @IsEnum(OrdenacaoDataPedido)
+  sort?: OrdenacaoDataPedido = OrdenacaoDataPedido.DESC;
 }
