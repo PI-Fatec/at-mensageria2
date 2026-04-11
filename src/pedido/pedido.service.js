@@ -145,11 +145,25 @@ export class PedidoService {
         email: pedido.cliente?.email,
         document: pedido.cliente?.document,
       },
-      seller: pedido.seller,
+      seller: pedido.seller ? {
+        id: pedido.seller.id || null,
+        name: pedido.seller.name || '',
+        city: pedido.seller.city || '',
+        state: pedido.seller.state || '',
+      } : null,
       items: itensMapeados,
-      shipment: pedido.shipment,
+      shipment: pedido.shipment ? {
+        carrier: pedido.shipment.carrier || '',
+        service: pedido.shipment.service || '',
+        status: pedido.shipment.status || '',
+        tracking_code: pedido.shipment.tracking_code || '',
+      } : null,
       payment: pedido.payment,
-      metadata: pedido.metadata,
+      metadata: pedido.metadata ? {
+        source: pedido.metadata.source || '',
+        user_agent: pedido.metadata.user_agent || '',
+        ip_address: pedido.metadata.ip_address || '',
+      } : null,
       indexed_at: pedido.data_indexacao,
     };
   }
