@@ -80,13 +80,31 @@ npm run seed
 2. Consultar pedidos:
 
 ```http
-GET /orders?page=1&limit=10&codigoCliente=7788&status=created&sort=desc
+GET /orders
 ```
 
 3. Consultar pedido por uuid:
 
 ```http
 GET /orders/ORD-2025-0001
+```
+
+4. Consultar pedido por id do cliente:
+
+```http
+GET /orders?codigoCliente=7788
+```
+
+5. Consultar pedido por id do produto:
+
+```http
+GET /orders?produtoId=9001
+```
+
+5. Consultar pedido por status do pedido (created,paid,shipped,delivered,canceled):
+
+```http
+GET /orders?status=created
 ```
 
 ## Entregaveis academicos
