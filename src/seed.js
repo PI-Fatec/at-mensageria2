@@ -1,11 +1,15 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { PedidoService } from './pedido/pedido.service';
-import { CreatePedidoDto } from './pedido/dto/create-pedido.dto';
-import { StatusPedido } from './pedido/dto/get-pedidos-filter.dto';
+import { AppModule } from './app.module.js';
+import { PedidoService } from './pedido/pedido.service.js';
 
-const pedidosPadrao: CreatePedidoDto[] = [
+const StatusPedido = {
+    CREATED: 'created',
+    PAID: 'paid',
+    DELIVERED: 'delivered'
+};
+
+const pedidosPadrao = [
   {
     uuid: 'ORD-2025-0001',
     created_at: '2025-10-01T10:15:00Z',
@@ -198,10 +202,12 @@ async function bootstrap() {
       await pedidoService.salvarPedidoDoMarketplace(pedido);
     }
 
-    console.log(`Seed concluido com ${pedidosPadrao.length} pedidos padrao.`);
+    console.log(`Seed concluído com ${pedidosPadrao.length} pedidos padrão.`);
+  } catch (error) {
+    console.error('Erro ao executar seed:', error);
   } finally {
     await app.close();
   }
 }
 
-void bootstrap();
+bootstrap();

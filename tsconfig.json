@@ -1,26 +1,17 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
-    "sourceMap": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "allowJs": true,
+    "checkJs": false,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": "./",
-    "incremental": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "Bundler",
     "skipLibCheck": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "ignoreDeprecations": "5.0"
+  },
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules"]
 }

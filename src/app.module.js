@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PedidoModule } from './pedido/pedido.module';
+import { PedidoModule } from './pedido/pedido.module.js';
 
 @Module({
   imports: [

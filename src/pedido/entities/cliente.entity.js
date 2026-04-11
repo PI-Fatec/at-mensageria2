@@ -1,20 +1,20 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
-import { Pedido } from './pedido.entity';
+import { Pedido } from './pedido.entity.js';
 
 @Entity('cliente')
 export class Cliente {
   @PrimaryColumn({ type: 'int' })
-  id!: number;
+  id;
 
   @Column({ length: 255 })
-  nome!: string;
+  nome;
 
   @Column({ length: 255, unique: true })
-  email!: string;
+  email;
 
   @Column({ type: 'varchar', length: 30, nullable: true })
-  document!: string | null;
+  document;
 
-  @OneToMany(() => Pedido, (pedido: Pedido) => pedido.cliente)
-  pedidos!: Pedido[];
+  @OneToMany(() => Pedido, (pedido) => pedido.cliente)
+  pedidos;
 }

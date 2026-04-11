@@ -1,116 +1,115 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { StatusPedido } from './get-pedidos-filter.dto';
+import { StatusPedido } from './get-pedidos-filter.dto.js';
 
 class CategoryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  id?: string;
+  id;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  name?: string;
+  name;
 
   @ApiPropertyOptional({ type: () => CategoryDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => CategoryDto)
-  sub_category?: CategoryDto;
+  sub_category;
 }
 
 class ItemMarketplaceDto {
   @ApiProperty()
   @IsInt()
-  product_id!: number;
+  product_id;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  product_name?: string;
+  product_name;
 
   @ApiProperty()
   @IsInt()
-  quantity!: number;
+  quantity;
 
   @ApiProperty()
   @IsNumber()
-  unit_price!: number;
+  unit_price;
 
   @ApiPropertyOptional({ type: () => CategoryDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => CategoryDto)
-  category?: CategoryDto;
+  category;
 }
 
 class CustomerDto {
   @ApiProperty()
   @IsInt()
-  id!: number;
+  id;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  name?: string;
+  name;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  email?: string;
+  email;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  document?: string;
+  document;
 }
 
 export class CreatePedidoDto {
-  @ApiProperty({ description: 'UUID gerado pelo sistema de vendas' })
+  @ApiProperty({ description: 'UUID gerado pelo sistema' })
   @IsString()
   @IsNotEmpty()
-  uuid!: string;
+  uuid;
 
-  @ApiProperty({ description: 'Data em que o pedido foi feito no marketplace' })
+  @ApiProperty({ description: 'Data do pedido' })
   @IsDateString()
-  created_at!: string;
+  created_at;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  channel?: string;
+  channel;
 
   @ApiProperty({ enum: StatusPedido })
   @IsEnum(StatusPedido)
-  status!: StatusPedido;
+  status;
 
   @ApiProperty({ type: () => CustomerDto })
   @ValidateNested()
   @Type(() => CustomerDto)
-  customer!: CustomerDto;
+  customer;
 
-  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({ type: 'object' })
   @IsOptional()
-  seller?: Record<string, unknown>;
+  seller;
 
-  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({ type: 'object' })
   @IsOptional()
-  shipment?: Record<string, unknown>;
+  shipment;
 
-  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({ type: 'object' })
   @IsOptional()
-  payment?: Record<string, unknown>;
+  payment;
 
-  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  @ApiPropertyOptional({ type: 'object' })
   @IsOptional()
-  metadata?: Record<string, unknown>;
+  metadata;
 
   @ApiProperty({ type: [ItemMarketplaceDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ItemMarketplaceDto)
-  items!: ItemMarketplaceDto[];
+  items;
 }

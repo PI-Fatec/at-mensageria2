@@ -1,30 +1,29 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
-import { ItemPedido } from './item-pedido';
+import { ItemPedido } from './item-pedido.js';
 
 @Entity('produto')
 export class Produto {
   @PrimaryColumn({ type: 'int' })
-  id!: number;
+  id;
 
   @Column({ length: 255 })
-  nome!: string;
+  nome;
 
   @Column({ type: 'text', nullable: true })
-  descricao!: string | null;
+  descricao;
 
   @Column({ type: 'varchar', length: 40, nullable: true })
-  categoria_id!: string | null;
+  categoria_id;
 
   @Column({ type: 'varchar', length: 120, nullable: true })
-  categoria_nome!: string | null;
+  categoria_nome;
 
   @Column({ type: 'varchar', length: 40, nullable: true })
-  subcategoria_id!: string | null;
+  subcategoria_id;
 
   @Column({ type: 'varchar', length: 120, nullable: true })
-  subcategoria_nome!: string | null;
+  subcategoria_nome;
 
-  @OneToMany(() => ItemPedido, (item: ItemPedido) => item.produto)
-  itens!: ItemPedido[];
+  @OneToMany(() => ItemPedido, (item) => item.produto)
+  itens;
 }

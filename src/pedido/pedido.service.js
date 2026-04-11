@@ -1,29 +1,26 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Pedido } from './entities/pedido.entity';
-import { GetPedidosFilterDto, OrdenacaoDataPedido } from './dto/get-pedidos-filter.dto';
-import { CreatePedidoDto } from './dto/create-pedido.dto';
-import { Cliente } from './entities/cliente.entity';
-import { Produto } from './entities/produto.entity';
-import { ItemPedido } from './entities/item-pedido';
+import { Pedido } from './entities/pedido.entity.js';
+import { Cliente } from './entities/cliente.entity.js';
+import { Produto } from './entities/produto.entity.js';
+import { ItemPedido } from './entities/item-pedido.js';
 
 @Injectable()
 export class PedidoService {
   constructor(
-    @InjectRepository(Pedido)
-    private readonly pedidoRepository: Repository<Pedido>,
-    @InjectRepository(Cliente)
-    private readonly clienteRepository: Repository<Cliente>,
-    @InjectRepository(Produto)
-    private readonly produtoRepository: Repository<Produto>,
-    @InjectRepository(ItemPedido)
-    private readonly itemPedidoRepository: Repository<ItemPedido>,
-  ) {}
+    @InjectRepository(Pedido) pedidoRepository,
+    @InjectRepository(Cliente) clienteRepository,
+    @InjectRepository(Produto) produtoRepository,
+    @InjectRepository(ItemPedido) itemPedidoRepository,
+  ) {
+    this.pedidoRepository = pedidoRepository;
+    this.clienteRepository = clienteRepository;
+    this.produtoRepository = produtoRepository;
+    this.itemPedidoRepository = itemPedidoRepository;
+  }
 
-  async salvarPedidoDoMarketplace(dto: CreatePedidoDto) {
+  async salvarPedidoDoMarketplace(dto) {
     const pedidoExistente = await this.pedidoRepository.findOne({
       where: { uuid: dto.uuid },
       relations: ['cliente', 'itens', 'itens.produto'],
@@ -56,7 +53,6 @@ export class PedidoService {
         quantidade: itemDto.quantity,
         preco_unitario: itemDto.unit_price,
       });
-
       await this.itemPedidoRepository.save(item);
     }
 
@@ -68,21 +64,21 @@ export class PedidoService {
     return this.formatarPayload(pedidoCompleto);
   }
 
-  async findAll(filtros: GetPedidosFilterDto) {
+  async findAll(filtros) {
     const {
       page = 1,
       limit = 10,
       codigoCliente,
       produtoId,
       status,
-      sort = OrdenacaoDataPedido.DESC,
+      sort = 'DESC',
     } = filtros;
 
     const query = this.pedidoRepository.createQueryBuilder('pedido')
       .leftJoinAndSelect('pedido.cliente', 'cliente')
       .leftJoinAndSelect('pedido.itens', 'itens')
       .leftJoinAndSelect('itens.produto', 'produto')
-      .orderBy('pedido.data_criacao_marketplace', sort.toUpperCase() as 'ASC' | 'DESC')
+      .orderBy('pedido.data_criacao_marketplace', sort.toUpperCase())
       .distinct(true);
 
     if (codigoCliente) query.andWhere('cliente.id = :codigoCliente', { codigoCliente });
@@ -92,21 +88,15 @@ export class PedidoService {
     query.skip((page - 1) * limit).take(limit);
 
     const [pedidos, total] = await query.getManyAndCount();
-
     const data = pedidos.map(pedido => this.formatarPayload(pedido));
 
     return {
       data,
-      meta: {
-        total,
-        page,
-        limit,
-        last_page: Math.ceil(total / limit),
-      },
+      meta: { total, page, limit, last_page: Math.ceil(total / limit) },
     };
   }
 
-  async findOne(uuid: string) {
+  async findOne(uuid) {
     const pedido = await this.pedidoRepository.findOne({
       where: { uuid },
       relations: ['cliente', 'itens', 'itens.produto'],
@@ -119,12 +109,9 @@ export class PedidoService {
     return this.formatarPayload(pedido);
   }
 
-  // Função privada para calcular e formatar o contrato
-  private formatarPayload(pedido: Pedido) {
+  formatarPayload(pedido) {
     let valorTotalPedido = 0;
-
     const itensMapeados = pedido.itens.map((item) => {
-      // Cálculo: valor total de cada item
       const valorTotalItem = item.quantidade * Number(item.preco_unitario);
       valorTotalPedido += valorTotalItem;
 
@@ -167,7 +154,7 @@ export class PedidoService {
     };
   }
 
-  private async salvarOuAtualizarCliente(dto: CreatePedidoDto) {
+  async salvarOuAtualizarCliente(dto) {
     let cliente = await this.clienteRepository.findOne({
       where: { id: dto.customer.id },
     });
@@ -184,11 +171,10 @@ export class PedidoService {
       cliente.email = dto.customer.email ?? cliente.email;
       cliente.document = dto.customer.document ?? cliente.document;
     }
-
     return this.clienteRepository.save(cliente);
   }
 
-  private async salvarOuAtualizarProduto(itemDto: CreatePedidoDto['items'][number]) {
+  async salvarOuAtualizarProduto(itemDto) {
     let produto = await this.produtoRepository.findOne({
       where: { id: itemDto.product_id },
     });
@@ -197,7 +183,6 @@ export class PedidoService {
       produto = this.produtoRepository.create({
         id: itemDto.product_id,
         nome: itemDto.product_name ?? `Produto ${itemDto.product_id}`,
-        descricao: null,
         categoria_id: itemDto.category?.id ?? null,
         categoria_nome: itemDto.category?.name ?? null,
         subcategoria_id: itemDto.category?.sub_category?.id ?? null,
@@ -210,7 +195,6 @@ export class PedidoService {
       produto.subcategoria_id = itemDto.category?.sub_category?.id ?? produto.subcategoria_id;
       produto.subcategoria_nome = itemDto.category?.sub_category?.name ?? produto.subcategoria_nome;
     }
-
     return this.produtoRepository.save(produto);
   }
 }
