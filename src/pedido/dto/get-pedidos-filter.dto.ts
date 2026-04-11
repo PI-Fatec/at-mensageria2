@@ -4,10 +4,14 @@ import { Type } from 'class-transformer';
 
 export enum StatusPedido {
   CREATED = 'created',
+  CONFIRMED = 'confirmed',
+  PENDING = 'pending',
   PAID = 'paid',
   SHIPPED = 'shipped',
+  SEPARATED = 'separated',
   DELIVERED = 'delivered',
   CANCELED = 'canceled',
+  CANCELLED = 'cancelled',
 }
 
 export enum OrdenacaoDataPedido {
