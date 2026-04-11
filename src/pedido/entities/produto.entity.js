@@ -6,7 +6,7 @@ export class Produto {
   @PrimaryColumn({ type: 'int' })
   id;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   nome;
 
   @Column({ type: 'text', nullable: true })
