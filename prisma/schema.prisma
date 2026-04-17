@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PedidoStatus {
+  CREATED   @map("created")
+  CONFIRMED @map("confirmed")
+  PENDING   @map("pending")
+  PAID      @map("paid")
+  SHIPPED   @map("shipped")
+  SEPARATED @map("separated")
+  DELIVERED @map("delivered")
+  CANCELED  @map("canceled")
+  CANCELLED @map("cancelled")
+
+  @@map("pedido_status_enum")
+}
+
+model Cliente {
+  id      Int      @id
+  nome    String
+  email   String   @unique
+  document String?
+  pedidos Pedido[]
+
+  @@map("cliente")
+}
+
+model Produto {
+  id               Int          @id
+  nome             String
+  descricao        String?
+  categoriaId      String?      @map("categoria_id")
+  categoriaNome    String?      @map("categoria_nome")
+  subcategoriaId   String?      @map("subcategoria_id")
+  subcategoriaNome String?      @map("subcategoria_nome")
+  itens            ItemPedido[]
+
+  @@map("produto")
+}
+
+model Pedido {
+  uuid                  String       @id @db.VarChar(120)
+  status                PedidoStatus
+  channel               String?      @db.VarChar(100)
+  dataCriacaoMarketplace DateTime    @map("data_criacao_marketplace")
+  dataIndexacao         DateTime     @map("data_indexacao")
+  seller                Json?
+  shipment              Json?
+  payment               Json?
+  metadata              Json?
+  clienteId             Int?         @map("cliente_id")
+  cliente               Cliente?     @relation(fields: [clienteId], references: [id])
+  itens                 ItemPedido[]
+
+  @@index([clienteId])
+  @@map("pedido")
+}
+
+model ItemPedido {
+  id           Int      @id @default(autoincrement())
+  precoUnitario Decimal @map("preco_unitario") @db.Decimal(10, 2)
+  quantidade   Int
+  pedidoUuid   String   @map("pedido_uuid") @db.VarChar(120)
+  produtoId    Int      @map("produto_id")
+  pedido       Pedido   @relation(fields: [pedidoUuid], references: [uuid], onDelete: Cascade)
+  produto      Produto  @relation(fields: [produtoId], references: [id])
+
+  @@index([pedidoUuid])
+  @@index([produtoId])
+  @@map("item_pedido")
+}
