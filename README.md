@@ -64,3 +64,26 @@ O consumidor eh opcional. Para ativar, configure:
 - GOOGLE_APPLICATION_CREDENTIALS
 - PUBSUB_SUBSCRIPTION_NAME
 - PUBSUB_EMULATOR_HOST (opcional)
+
+## Rotas
+
+1. Consultar pedidos:
+```
+GET /orders
+```
+2. Consultar pedido por uuid:
+```
+GET /orders/ORD-2025-0001
+```
+3. Consultar pedido por id do cliente:
+```
+GET /orders?codigoCliente=7788
+```
+4. Consultar pedido por id do produto:
+```
+GET /orders?produtoId=9001
+```
+5. Consultar pedido por status do pedido (created,paid,shipped,delivered,canceled):
+```
+GET /orders?status=created
+```
